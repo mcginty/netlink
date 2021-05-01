@@ -40,3 +40,8 @@ pub use self::tokio::TokioSocket;
 mod smol;
 #[cfg(feature = "smol_socket")]
 pub use self::smol::SmolSocket;
+
+#[cfg(feature = "mio_socket")]
+mod mio;
+#[cfg(feature = "mio_socket")]
+pub use self::mio::MioSocket;

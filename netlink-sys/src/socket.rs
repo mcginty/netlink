@@ -1,7 +1,7 @@
 use std::{
     io::{Error, Result},
     mem,
-    os::unix::io::{AsRawFd, FromRawFd, RawFd},
+    os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd},
 };
 
 use crate::SocketAddr;
@@ -54,6 +54,12 @@ pub struct Socket(RawFd);
 
 impl AsRawFd for Socket {
     fn as_raw_fd(&self) -> RawFd {
+        self.0
+    }
+}
+
+impl IntoRawFd for Socket {
+    fn into_raw_fd(self) -> RawFd {
         self.0
     }
 }
