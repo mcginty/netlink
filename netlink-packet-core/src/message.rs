@@ -17,10 +17,8 @@ use crate::{
 };
 
 /// Represent a netlink message.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NetlinkMessage<I>
-where
-    I: Debug + PartialEq + Eq + Clone,
 {
     /// Message header (this is common to all the netlink protocols)
     pub header: NetlinkHeader,
@@ -29,8 +27,6 @@ where
 }
 
 impl<I> NetlinkMessage<I>
-where
-    I: Debug + PartialEq + Eq + Clone,
 {
     /// Create a new netlink message from the given header and payload
     pub fn new(header: NetlinkHeader, payload: NetlinkPayload<I>) -> Self {
@@ -45,7 +41,7 @@ where
 
 impl<I> NetlinkMessage<I>
 where
-    I: NetlinkDeserializable<I> + Debug + PartialEq + Eq + Clone,
+    I: NetlinkDeserializable<I> ,
 {
     /// Parse the given buffer as a netlink message
     pub fn deserialize(buffer: &[u8]) -> Result<Self, DecodeError> {
@@ -56,7 +52,7 @@ where
 
 impl<I> NetlinkMessage<I>
 where
-    I: NetlinkSerializable<I> + Debug + PartialEq + Eq + Clone,
+    I: NetlinkSerializable<I>,
 {
     /// Return the length of this message in bytes
     pub fn buffer_len(&self) -> usize {
@@ -92,7 +88,7 @@ where
 impl<'buffer, B, I> Parseable<NetlinkBuffer<&'buffer B>> for NetlinkMessage<I>
 where
     B: AsRef<[u8]> + 'buffer,
-    I: Debug + PartialEq + Eq + Clone + NetlinkDeserializable<I>,
+    I: NetlinkDeserializable<I>,
 {
     fn parse(buf: &NetlinkBuffer<&'buffer B>) -> Result<Self, DecodeError> {
         use self::NetlinkPayload::*;
@@ -129,7 +125,7 @@ where
 
 impl<I> Emitable for NetlinkMessage<I>
 where
-    I: NetlinkSerializable<I> + Debug + PartialEq + Eq + Clone,
+    I: NetlinkSerializable<I>,
 {
     fn buffer_len(&self) -> usize {
         use self::NetlinkPayload::*;
@@ -163,7 +159,7 @@ where
 
 impl<T> From<T> for NetlinkMessage<T>
 where
-    T: Into<NetlinkPayload<T>> + Debug + Clone + Eq + PartialEq,
+    T: Into<NetlinkPayload<T>>,
 {
     fn from(inner_message: T) -> Self {
         NetlinkMessage {
