@@ -55,6 +55,15 @@ pub enum RtnlMessage {
     GetRule(RuleMessage),
 }
 
+macro_rules! matches {
+    ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )? $(,)?) => {
+        match $expression {
+            $( $pattern )|+ $( if $guard )? => true,
+            _ => false
+        }
+    }
+}
+
 impl RtnlMessage {
     pub fn is_new_link(&self) -> bool {
         matches!(self, RtnlMessage::NewLink(_))
