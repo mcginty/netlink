@@ -26,7 +26,7 @@ use std::net::IpAddr;
 pub(crate) fn ip_len(addr: &IpAddr) -> usize {
     match addr {
         IpAddr::V4(_) => 4,
-        IpAddr::V6(_) => 6,
+        IpAddr::V6(_) => 16,
     }
 }
 
@@ -36,3 +36,7 @@ pub(crate) fn emit_ip(buf: &mut [u8], addr: &IpAddr) {
         IpAddr::V6(ref ip) => buf.copy_from_slice(&ip.octets()),
     }
 }
+
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;

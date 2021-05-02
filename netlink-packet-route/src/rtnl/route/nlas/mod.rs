@@ -43,7 +43,8 @@ pub enum Nla {
     #[cfg(not(feature = "rich_nlas"))]
     MultiPath(Vec<u8>),
     #[cfg(feature = "rich_nlas")]
-    MultiPath(NextHops),
+    // See: https://codecave.cc/multipath-routing-in-linux-part-1.html
+    MultiPath(Vec<NextHop>),
     #[cfg(not(feature = "rich_nlas"))]
     CacheInfo(Vec<u8>),
     #[cfg(feature = "rich_nlas")]
@@ -112,7 +113,7 @@ impl nlas::Nla for Nla {
             #[cfg(feature = "rich_nlas")]
             Metrics(ref metrics) => metrics.buffer_len(),
             #[cfg(feature = "rich_nlas")]
-            MultiPath(ref next_hops) => next_hops.buffer_len(),
+            MultiPath(ref next_hops) => next_hops.iter().map(|nh| nh.buffer_len()).sum(),
 
             EncapType(_) => 2,
             Iif(_)
@@ -165,7 +166,14 @@ impl nlas::Nla for Nla {
             #[cfg(feature = "rich_nlas")]
             Metrics(ref metrics) => metrics.emit(buffer),
             #[cfg(feature = "rich_nlas")]
-            MultiPath(ref next_hops) => next_hops.emit(buffer),
+            MultiPath(ref next_hops) => {
+                let mut offset = 0;
+                for nh in next_hops {
+                    let len = nh.buffer_len();
+                    nh.emit(&mut buffer[offset..offset+len]);
+                    offset += len
+                }
+            }
 
             EncapType(value) => NativeEndian::write_u16(buffer, value),
             Iif(value)
@@ -280,12 +288,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             #[cfg(not(feature = "rich_nlas"))]
             RTA_MULTIPATH => MultiPath(payload.to_vec()),
             #[cfg(feature = "rich_nlas")]
-            RTA_MULTIPATH => MultiPath(
-                NextHops::parse(
-                    &NextHopsBuffer::new_checked(payload).context("invalid RTA_MULTIPATH value")?,
-                )
-                .context("invalid RTA_MULTIPATH value")?,
-            ),
+            RTA_MULTIPATH => {
+                let mut next_hops = vec![];
+                let mut buf = &payload[..];
+                loop {
+                    let nh_buf =
+                        NextHopBuffer::new_checked(&buf).context("invalid RTA_MULTIPATH value")?;
+                    let len = nh_buf.length() as usize;
+                    let nh = NextHop::parse(&nh_buf).context("invalid RTA_MULTIPATH value")?;
+                    next_hops.push(nh);
+                    if buf.len() == len {
+                        break;
+                    }
+                    buf = &buf[len..];
+                }
+                MultiPath(next_hops)
+            }
             _ => Other(DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?),
         })
     }
