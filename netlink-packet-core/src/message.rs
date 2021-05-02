@@ -18,16 +18,14 @@ use crate::{
 
 /// Represent a netlink message.
 #[derive(Debug, PartialEq, Eq)]
-pub struct NetlinkMessage<I>
-{
+pub struct NetlinkMessage<I> {
     /// Message header (this is common to all the netlink protocols)
     pub header: NetlinkHeader,
     /// Inner message, which depends on the netlink protocol being used.
     pub payload: NetlinkPayload<I>,
 }
 
-impl<I> NetlinkMessage<I>
-{
+impl<I> NetlinkMessage<I> {
     /// Create a new netlink message from the given header and payload
     pub fn new(header: NetlinkHeader, payload: NetlinkPayload<I>) -> Self {
         NetlinkMessage { header, payload }
@@ -41,7 +39,7 @@ impl<I> NetlinkMessage<I>
 
 impl<I> NetlinkMessage<I>
 where
-    I: NetlinkDeserializable<I> ,
+    I: NetlinkDeserializable<I>,
 {
     /// Parse the given buffer as a netlink message
     pub fn deserialize(buffer: &[u8]) -> Result<Self, DecodeError> {

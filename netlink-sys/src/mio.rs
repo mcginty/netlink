@@ -1,8 +1,10 @@
-use mio::{event, Interest, Registry, Token, unix::SourceFd};
+use mio::{event, unix::SourceFd, Interest, Registry, Token};
 
-use std::fmt;
-use std::io;
-use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use std::{
+    fmt,
+    io,
+    os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd},
+};
 
 use crate::{Socket, SocketAddr};
 
