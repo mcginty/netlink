@@ -12,18 +12,19 @@ use crate::{
     parsers::{parse_string, parse_u32},
     traits::Parseable,
     DecodeError,
+    ByteVec,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
-    Unspec(Vec<u8>),
-    Address(Vec<u8>),
-    Local(Vec<u8>),
+    Unspec(ByteVec),
+    Address(ByteVec),
+    Local(ByteVec),
     Label(String),
-    Broadcast(Vec<u8>),
-    Anycast(Vec<u8>),
-    CacheInfo(Vec<u8>),
-    Multicast(Vec<u8>),
+    Broadcast(ByteVec),
+    Anycast(ByteVec),
+    CacheInfo(ByteVec),
+    Multicast(ByteVec),
     Flags(u32),
     Other(DefaultNla),
 }
@@ -33,7 +34,7 @@ impl nlas::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match *self {
-            // Vec<u8>
+            // ByteVec
             Unspec(ref bytes)
                 | Address(ref bytes)
                 | Local(ref bytes)
@@ -59,7 +60,7 @@ impl nlas::Nla for Nla {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Nla::*;
         match *self {
-            // Vec<u8>
+            // ByteVec
             Unspec(ref bytes)
                 | Address(ref bytes)
                 | Local(ref bytes)
@@ -105,14 +106,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         use self::Nla::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFA_UNSPEC => Unspec(payload.to_vec()),
-            IFA_ADDRESS => Address(payload.to_vec()),
-            IFA_LOCAL => Local(payload.to_vec()),
+            IFA_UNSPEC => Unspec(ByteVec::from(payload)),
+            IFA_ADDRESS => Address(ByteVec::from(payload)),
+            IFA_LOCAL => Local(ByteVec::from(payload)),
             IFA_LABEL => Label(parse_string(payload).context("invalid IFA_LABEL value")?),
-            IFA_BROADCAST => Broadcast(payload.to_vec()),
-            IFA_ANYCAST => Anycast(payload.to_vec()),
-            IFA_CACHEINFO => CacheInfo(payload.to_vec()),
-            IFA_MULTICAST => Multicast(payload.to_vec()),
+            IFA_BROADCAST => Broadcast(ByteVec::from(payload)),
+            IFA_ANYCAST => Anycast(ByteVec::from(payload)),
+            IFA_CACHEINFO => CacheInfo(ByteVec::from(payload)),
+            IFA_MULTICAST => Multicast(ByteVec::from(payload)),
             IFA_FLAGS => Flags(parse_u32(payload).context("invalid IFA_FLAGS value")?),
             kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
         })

@@ -10,21 +10,22 @@ use crate::{
     parsers::{parse_u16, parse_u32},
     traits::Parseable,
     DecodeError,
+    ByteVec,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
-    Unspec(Vec<u8>),
-    Destination(Vec<u8>),
-    LinkLocalAddress(Vec<u8>),
-    CacheInfo(Vec<u8>),
-    Probes(Vec<u8>),
+    Unspec(ByteVec),
+    Destination(ByteVec),
+    LinkLocalAddress(ByteVec),
+    CacheInfo(ByteVec),
+    Probes(ByteVec),
     Vlan(u16),
-    Port(Vec<u8>),
+    Port(ByteVec),
     Vni(u32),
     IfIndex(u32),
-    Master(Vec<u8>),
-    LinkNetNsId(Vec<u8>),
+    Master(ByteVec),
+    LinkNetNsId(ByteVec),
     SourceVni(u32),
     Other(DefaultNla),
 }
@@ -96,17 +97,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 
         let payload = buf.value();
         Ok(match buf.kind() {
-            NDA_UNSPEC => Unspec(payload.to_vec()),
-            NDA_DST => Destination(payload.to_vec()),
-            NDA_LLADDR => LinkLocalAddress(payload.to_vec()),
-            NDA_CACHEINFO => CacheInfo(payload.to_vec()),
-            NDA_PROBES => Probes(payload.to_vec()),
+            NDA_UNSPEC => Unspec(ByteVec::from(payload)),
+            NDA_DST => Destination(ByteVec::from(payload)),
+            NDA_LLADDR => LinkLocalAddress(ByteVec::from(payload)),
+            NDA_CACHEINFO => CacheInfo(ByteVec::from(payload)),
+            NDA_PROBES => Probes(ByteVec::from(payload)),
             NDA_VLAN => Vlan(parse_u16(payload)?),
-            NDA_PORT => Port(payload.to_vec()),
+            NDA_PORT => Port(ByteVec::from(payload)),
             NDA_VNI => Vni(parse_u32(payload)?),
             NDA_IFINDEX => IfIndex(parse_u32(payload)?),
-            NDA_MASTER => Master(payload.to_vec()),
-            NDA_LINK_NETNSID => LinkNetNsId(payload.to_vec()),
+            NDA_MASTER => Master(ByteVec::from(payload)),
+            NDA_LINK_NETNSID => LinkNetNsId(ByteVec::from(payload)),
             NDA_SRC_VNI => SourceVni(parse_u32(payload)?),
             _ => Other(DefaultNla::parse(buf).context("invalid link NLA value (unknown type)")?),
         })

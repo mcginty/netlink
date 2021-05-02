@@ -29,16 +29,17 @@ use crate::{
     FRA_TUN_ID,
     FRA_UID_RANGE,
     FRA_UNSPEC,
+    ByteVec,
 };
 use anyhow::Context;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
-    Unspec(Vec<u8>),
+    Unspec(ByteVec),
     /// destination address
-    Destination(Vec<u8>),
+    Destination(ByteVec),
     /// source address
-    Source(Vec<u8>),
+    Source(ByteVec),
     /// input interface name
     Iifname(String),
     /// target to jump to when used with rule action `FR_ACT_GOTO`
@@ -54,16 +55,16 @@ pub enum Nla {
     Table(u32),
     /// output interface name
     OifName(String),
-    Pad(Vec<u8>),
+    Pad(ByteVec),
     /// iif or oif is l3mdev goto its table
     L3MDev(u8),
-    UidRange(Vec<u8>),
+    UidRange(ByteVec),
     /// RTPROT_*
     Protocol(u8),
     /// AF_*
     IpProto(u8),
-    SourcePortRange(Vec<u8>),
-    DestinationPortRange(Vec<u8>),
+    SourcePortRange(ByteVec),
+    DestinationPortRange(ByteVec),
     Other(DefaultNla),
 }
 
@@ -148,9 +149,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         let payload = buf.value();
 
         Ok(match buf.kind() {
-            FRA_UNSPEC => Unspec(payload.to_vec()),
-            FRA_DST => Destination(payload.to_vec()),
-            FRA_SRC => Source(payload.to_vec()),
+            FRA_UNSPEC => Unspec(ByteVec::from(payload)),
+            FRA_DST => Destination(ByteVec::from(payload)),
+            FRA_SRC => Source(ByteVec::from(payload)),
             FRA_IIFNAME => Iifname(parse_string(payload).context("invalid FRA_IIFNAME value")?),
             FRA_GOTO => Goto(parse_u32(payload).context("invalid FRA_GOTO value")?),
             FRA_PRIORITY => Priority(parse_u32(payload).context("invalid FRA_PRIORITY value")?),
@@ -166,13 +167,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             FRA_TABLE => Table(parse_u32(payload).context("invalid FRA_TABLE value")?),
             FRA_FWMASK => FwMask(parse_u32(payload).context("invalid FRA_FWMASK value")?),
             FRA_OIFNAME => OifName(parse_string(payload).context("invalid FRA_OIFNAME value")?),
-            FRA_PAD => Pad(payload.to_vec()),
+            FRA_PAD => Pad(ByteVec::from(payload)),
             FRA_L3MDEV => L3MDev(parse_u8(payload).context("invalid FRA_L3MDEV value")?),
-            FRA_UID_RANGE => UidRange(payload.to_vec()),
+            FRA_UID_RANGE => UidRange(ByteVec::from(payload)),
             FRA_PROTOCOL => Protocol(parse_u8(payload).context("invalid FRA_PROTOCOL value")?),
             FRA_IP_PROTO => IpProto(parse_u8(payload).context("invalid FRA_IP_PROTO value")?),
-            FRA_SPORT_RANGE => SourcePortRange(payload.to_vec()),
-            FRA_DPORT_RANGE => DestinationPortRange(payload.to_vec()),
+            FRA_SPORT_RANGE => SourcePortRange(ByteVec::from(payload)),
+            FRA_DPORT_RANGE => DestinationPortRange(ByteVec::from(payload)),
             _ => Other(DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?),
         })
     }

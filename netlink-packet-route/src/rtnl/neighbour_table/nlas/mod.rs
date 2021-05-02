@@ -12,20 +12,21 @@ use crate::{
     nlas::{self, DefaultNla, NlaBuffer},
     parsers::{parse_string, parse_u32, parse_u64},
     traits::Parseable,
+    ByteVec,
     DecodeError,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
-    Unspec(Vec<u8>),
+    Unspec(ByteVec),
     // FIXME: parse this nla
-    Parms(Vec<u8>),
+    Parms(ByteVec),
     Name(String),
     Threshold1(u32),
     Threshold2(u32),
     Threshold3(u32),
-    Config(Vec<u8>),
-    Stats(Vec<u8>),
+    Config(ByteVec),
+    Stats(ByteVec),
     GcInterval(u64),
     Other(DefaultNla),
 }
@@ -85,11 +86,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 
         let payload = buf.value();
         Ok(match buf.kind() {
-            NDTA_UNSPEC => Unspec(payload.to_vec()),
+            NDTA_UNSPEC => Unspec(ByteVec::from(payload)),
             NDTA_NAME => Name(parse_string(payload).context("invalid NDTA_NAME value")?),
-            NDTA_CONFIG => Config(payload.to_vec()),
-            NDTA_STATS => Stats(payload.to_vec()),
-            NDTA_PARMS => Parms(payload.to_vec()),
+            NDTA_CONFIG => Config(ByteVec::from(payload)),
+            NDTA_STATS => Stats(ByteVec::from(payload)),
+            NDTA_PARMS => Parms(ByteVec::from(payload)),
             NDTA_GC_INTERVAL => {
                 GcInterval(parse_u64(payload).context("invalid NDTA_GC_INTERVAL value")?)
             }

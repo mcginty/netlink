@@ -18,6 +18,7 @@ use crate::{
     nlas::{self, DefaultNla, NlaBuffer},
     parsers::{parse_u16, parse_u32},
     traits::Parseable,
+    ByteVec,
     DecodeError,
 };
 
@@ -29,36 +30,36 @@ use crate::traits::Emitable;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
     #[cfg(not(feature = "rich_nlas"))]
-    Metrics(Vec<u8>),
+    Metrics(ByteVec),
     #[cfg(feature = "rich_nlas")]
     Metrics(Metrics),
     #[cfg(not(feature = "rich_nlas"))]
-    MfcStats(Vec<u8>),
+    MfcStats(ByteVec),
     #[cfg(feature = "rich_nlas")]
     MfcStats(MfcStats),
     #[cfg(not(feature = "rich_nlas"))]
-    MultiPath(Vec<u8>),
+    MultiPath(ByteVec),
     #[cfg(feature = "rich_nlas")]
     MultiPath(NextHops),
     #[cfg(not(feature = "rich_nlas"))]
-    CacheInfo(Vec<u8>),
+    CacheInfo(ByteVec),
     #[cfg(feature = "rich_nlas")]
     CacheInfo(CacheInfo),
-    Unspec(Vec<u8>),
-    Destination(Vec<u8>),
-    Source(Vec<u8>),
-    Gateway(Vec<u8>),
-    PrefSource(Vec<u8>),
-    Session(Vec<u8>),
-    MpAlgo(Vec<u8>),
-    Via(Vec<u8>),
-    NewDestination(Vec<u8>),
-    Pref(Vec<u8>),
-    Encap(Vec<u8>),
-    Expires(Vec<u8>),
-    Pad(Vec<u8>),
-    Uid(Vec<u8>),
-    TtlPropagate(Vec<u8>),
+    Unspec(ByteVec),
+    Destination(ByteVec),
+    Source(ByteVec),
+    Gateway(ByteVec),
+    PrefSource(ByteVec),
+    Session(ByteVec),
+    MpAlgo(ByteVec),
+    Via(ByteVec),
+    NewDestination(ByteVec),
+    Pref(ByteVec),
+    Encap(ByteVec),
+    Expires(ByteVec),
+    Pad(ByteVec),
+    Uid(ByteVec),
+    TtlPropagate(ByteVec),
     EncapType(u16),
     Iif(u32),
     Oif(u32),
@@ -213,21 +214,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 
         let payload = buf.value();
         Ok(match buf.kind() {
-            RTA_UNSPEC => Unspec(payload.to_vec()),
-            RTA_DST => Destination(payload.to_vec()),
-            RTA_SRC => Source(payload.to_vec()),
-            RTA_GATEWAY => Gateway(payload.to_vec()),
-            RTA_PREFSRC => PrefSource(payload.to_vec()),
-            RTA_SESSION => Session(payload.to_vec()),
-            RTA_MP_ALGO => MpAlgo(payload.to_vec()),
-            RTA_VIA => Via(payload.to_vec()),
-            RTA_NEWDST => NewDestination(payload.to_vec()),
-            RTA_PREF => Pref(payload.to_vec()),
-            RTA_ENCAP => Encap(payload.to_vec()),
-            RTA_EXPIRES => Expires(payload.to_vec()),
-            RTA_PAD => Pad(payload.to_vec()),
-            RTA_UID => Uid(payload.to_vec()),
-            RTA_TTL_PROPAGATE => TtlPropagate(payload.to_vec()),
+            RTA_UNSPEC => Unspec(ByteVec::from(payload)),
+            RTA_DST => Destination(ByteVec::from(payload)),
+            RTA_SRC => Source(ByteVec::from(payload)),
+            RTA_GATEWAY => Gateway(ByteVec::from(payload)),
+            RTA_PREFSRC => PrefSource(ByteVec::from(payload)),
+            RTA_SESSION => Session(ByteVec::from(payload)),
+            RTA_MP_ALGO => MpAlgo(ByteVec::from(payload)),
+            RTA_VIA => Via(ByteVec::from(payload)),
+            RTA_NEWDST => NewDestination(ByteVec::from(payload)),
+            RTA_PREF => Pref(ByteVec::from(payload)),
+            RTA_ENCAP => Encap(ByteVec::from(payload)),
+            RTA_EXPIRES => Expires(ByteVec::from(payload)),
+            RTA_PAD => Pad(ByteVec::from(payload)),
+            RTA_UID => Uid(ByteVec::from(payload)),
+            RTA_TTL_PROPAGATE => TtlPropagate(ByteVec::from(payload)),
             RTA_ENCAP_TYPE => {
                 EncapType(parse_u16(payload).context("invalid RTA_ENCAP_TYPE value")?)
             }
@@ -242,7 +243,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             RTA_MARK => Mark(parse_u32(payload).context("invalid RTA_MARK value")?),
 
             #[cfg(not(feature = "rich_nlas"))]
-            RTA_CACHEINFO => CacheInfo(payload.to_vec()),
+            RTA_CACHEINFO => CacheInfo(ByteVec::from(payload)),
             #[cfg(feature = "rich_nlas")]
             RTA_CACHEINFO => CacheInfo(
                 cache_info::CacheInfo::parse(
@@ -252,7 +253,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 .context("invalid RTA_CACHEINFO value")?,
             ),
             #[cfg(not(feature = "rich_nlas"))]
-            RTA_MFC_STATS => MfcStats(payload.to_vec()),
+            RTA_MFC_STATS => MfcStats(ByteVec::from(payload)),
             #[cfg(feature = "rich_nlas")]
             RTA_MFC_STATS => MfcStats(
                 mfc_stats::MfcStats::parse(
@@ -261,7 +262,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 .context("invalid RTA_MFC_STATS value")?,
             ),
             #[cfg(not(feature = "rich_nlas"))]
-            RTA_METRICS => Metrics(payload.to_vec()),
+            RTA_METRICS => Metrics(ByteVec::from(payload)),
             #[cfg(feature = "rich_nlas")]
             RTA_METRICS => Metrics(
                 metrics::Metrics::parse(
@@ -270,7 +271,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 .context("invalid RTA_METRICS value")?,
             ),
             #[cfg(not(feature = "rich_nlas"))]
-            RTA_MULTIPATH => MultiPath(payload.to_vec()),
+            RTA_MULTIPATH => MultiPath(ByteVec::from(payload)),
             #[cfg(feature = "rich_nlas")]
             RTA_MULTIPATH => MultiPath(
                 NextHops::parse(

@@ -13,26 +13,27 @@ use crate::{
     parsers::{parse_string, parse_u8},
     traits::{Emitable, Parseable},
     DecodeError,
+    ByteVec,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
     /// Unspecified
-    Unspec(Vec<u8>),
+    Unspec(ByteVec),
     /// Name of queueing discipline
     Kind(String),
     /// Qdisc-specific options follow
-    Options(Vec<u8>),
+    Options(ByteVec),
     /// Qdisc statistics
     Stats(Stats),
     /// Module-specific statistics
-    XStats(Vec<u8>),
+    XStats(ByteVec),
     /// Rate limit
-    Rate(Vec<u8>),
-    Fcnt(Vec<u8>),
+    Rate(ByteVec),
+    Fcnt(ByteVec),
     Stats2(Vec<Stats2>),
-    Stab(Vec<u8>),
-    Chain(Vec<u8>),
+    Stab(ByteVec),
+    Chain(ByteVec),
     HwOffload(u8),
     Other(DefaultNla),
 }
@@ -42,7 +43,7 @@ impl nlas::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match *self {
-            // Vec<u8>
+            // ByteVec
             Unspec(ref bytes)
                 | Options(ref bytes)
                 | XStats(ref bytes)
@@ -64,7 +65,7 @@ impl nlas::Nla for Nla {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Nla::*;
         match *self {
-            // Vec<u8>
+            // ByteVec
             Unspec(ref bytes)
                 | Options(ref bytes)
                 | XStats(ref bytes)
@@ -110,13 +111,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_UNSPEC => Self::Unspec(payload.to_vec()),
+            TCA_UNSPEC => Self::Unspec(ByteVec::from(payload)),
             TCA_KIND => Self::Kind(parse_string(payload)?),
-            TCA_OPTIONS => Self::Options(payload.to_vec()),
+            TCA_OPTIONS => Self::Options(ByteVec::from(payload)),
             TCA_STATS => Self::Stats(Stats::parse(&StatsBuffer::new_checked(payload)?)?),
-            TCA_XSTATS => Self::XStats(payload.to_vec()),
-            TCA_RATE => Self::Rate(payload.to_vec()),
-            TCA_FCNT => Self::Fcnt(payload.to_vec()),
+            TCA_XSTATS => Self::XStats(ByteVec::from(payload)),
+            TCA_RATE => Self::Rate(ByteVec::from(payload)),
+            TCA_FCNT => Self::Fcnt(ByteVec::from(payload)),
             TCA_STATS2 => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
@@ -124,8 +125,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 }
                 Self::Stats2(nlas)
             }
-            TCA_STAB => Self::Stab(payload.to_vec()),
-            TCA_CHAIN => Self::Chain(payload.to_vec()),
+            TCA_STAB => Self::Stab(ByteVec::from(payload)),
+            TCA_CHAIN => Self::Chain(ByteVec::from(payload)),
             TCA_HW_OFFLOAD => Self::HwOffload(parse_u8(payload)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
@@ -134,9 +135,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Stats2 {
-    StatsApp(Vec<u8>),
-    StatsBasic(Vec<u8>),
-    StatsQueue(Vec<u8>),
+    StatsApp(ByteVec),
+    StatsBasic(ByteVec),
+    StatsQueue(ByteVec),
     Other(DefaultNla),
 }
 
@@ -174,9 +175,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Stats2 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_STATS_APP => Self::StatsApp(payload.to_vec()),
-            TCA_STATS_BASIC => Self::StatsBasic(payload.to_vec()),
-            TCA_STATS_QUEUE => Self::StatsQueue(payload.to_vec()),
+            TCA_STATS_APP => Self::StatsApp(ByteVec::from(payload)),
+            TCA_STATS_BASIC => Self::StatsBasic(ByteVec::from(payload)),
+            TCA_STATS_QUEUE => Self::StatsQueue(ByteVec::from(payload)),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }

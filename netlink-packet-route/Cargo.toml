@@ -21,6 +21,7 @@ libc = "0.2.66"
 netlink-packet-core = { path = "../netlink-packet-core", version = "0.2" }
 netlink-packet-utils = { path = "../netlink-packet-utils", version = "0.4" }
 bitflags = "1.2.1"
+tinyvec = { version = "1.2.0", features = ["alloc"] }
 
 [[example]]
 name = "dump_links"

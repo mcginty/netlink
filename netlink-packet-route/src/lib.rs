@@ -20,3 +20,5 @@ pub use self::rtnl::*;
 #[cfg(test)]
 #[macro_use]
 extern crate lazy_static;
+
+pub type ByteVec = tinyvec::TinyVec::<[u8; 16]>;

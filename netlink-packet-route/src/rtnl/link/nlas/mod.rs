@@ -36,31 +36,32 @@ use crate::{
     parsers::{parse_i32, parse_string, parse_u32, parse_u8},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
+    ByteVec,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nla {
     // Vec<u8>
-    Unspec(Vec<u8>),
-    Cost(Vec<u8>),
-    Priority(Vec<u8>),
-    Weight(Vec<u8>),
-    VfInfoList(Vec<u8>),
-    VfPorts(Vec<u8>),
-    PortSelf(Vec<u8>),
-    PhysPortId(Vec<u8>),
-    PhysSwitchId(Vec<u8>),
-    Pad(Vec<u8>),
-    Xdp(Vec<u8>),
-    Event(Vec<u8>),
-    NewNetnsId(Vec<u8>),
-    IfNetnsId(Vec<u8>),
-    CarrierUpCount(Vec<u8>),
-    CarrierDownCount(Vec<u8>),
-    NewIfIndex(Vec<u8>),
+    Unspec(ByteVec),
+    Cost(ByteVec),
+    Priority(ByteVec),
+    Weight(ByteVec),
+    VfInfoList(ByteVec),
+    VfPorts(ByteVec),
+    PortSelf(ByteVec),
+    PhysPortId(ByteVec),
+    PhysSwitchId(ByteVec),
+    Pad(ByteVec),
+    Xdp(ByteVec),
+    Event(ByteVec),
+    NewNetnsId(ByteVec),
+    IfNetnsId(ByteVec),
+    CarrierUpCount(ByteVec),
+    CarrierDownCount(ByteVec),
+    NewIfIndex(ByteVec),
     Info(Vec<Info>),
-    Wireless(Vec<u8>),
-    ProtoInfo(Vec<u8>),
+    Wireless(ByteVec),
+    ProtoInfo(ByteVec),
     /// A list of properties for the device. For additional context see the related linux kernel
     /// threads<sup>[1][1],[2][2]</sup>. In particular see [this message][defining message] from
     /// the first thread describing the design.
@@ -68,21 +69,21 @@ pub enum Nla {
     /// [1]: https://lwn.net/ml/netdev/20190719110029.29466-1-jiri@resnulli.us/
     /// [2]: https://lwn.net/ml/netdev/20190930094820.11281-1-jiri@resnulli.us/
     /// [defining message]: https://lwn.net/ml/netdev/20190913145012.GB2276@nanopsycho.orion/
-    PropList(Vec<u8>),
+    PropList(ByteVec),
     /// `protodown` is a mechanism that allows protocols to hold an interface down.
     /// This field is used to specify the reason why it is held down.
     /// For additional context see the related linux kernel threads<sup>[1][1],[2][2]</sup>.
     ///
     /// [1]: https://lwn.net/ml/netdev/1595877677-45849-1-git-send-email-roopa%40cumulusnetworks.com/
     /// [2]: https://lwn.net/ml/netdev/1596242041-14347-1-git-send-email-roopa%40cumulusnetworks.com/
-    ProtoDownReason(Vec<u8>),
+    ProtoDownReason(ByteVec),
     // mac address (use to be [u8; 6] but it turns out MAC != HW address, for instance for IP over
     // GRE where it's an IPv4!)
-    Address(Vec<u8>),
-    Broadcast(Vec<u8>),
+    Address(ByteVec),
+    Broadcast(ByteVec),
     /// Permanent hardware address of the device. The provides the same information
     /// as the ethtool ioctl interface.
-    PermAddress(Vec<u8>),
+    PermAddress(ByteVec),
 
     // string
     // FIXME: for empty string, should we encode the NLA as \0 or should we not set a payload? It
@@ -132,14 +133,14 @@ pub enum Nla {
     NetnsId(i32),
     // custom
     OperState(State),
-    Stats(Vec<u8>),
-    Stats64(Vec<u8>),
-    Map(Vec<u8>),
+    Stats(ByteVec),
+    Stats64(ByteVec),
+    Map(ByteVec),
     // AF_SPEC (the type of af_spec depends on the interface family of the message)
     AfSpecInet(Vec<AfSpecInet>),
     // AfSpecBridge(Vec<AfSpecBridgeNla>),
-    AfSpecBridge(Vec<u8>),
-    AfSpecUnknown(Vec<u8>),
+    AfSpecBridge(ByteVec),
+    AfSpecUnknown(ByteVec),
     Other(DefaultNla),
 }
 
@@ -390,32 +391,32 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
         let payload = buf.value();
         Ok(match buf.kind() {
             // Vec<u8>
-            IFLA_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_COST => Cost(payload.to_vec()),
-            IFLA_PRIORITY => Priority(payload.to_vec()),
-            IFLA_WEIGHT => Weight(payload.to_vec()),
-            IFLA_VFINFO_LIST => VfInfoList(payload.to_vec()),
-            IFLA_VF_PORTS => VfPorts(payload.to_vec()),
-            IFLA_PORT_SELF => PortSelf(payload.to_vec()),
-            IFLA_PHYS_PORT_ID => PhysPortId(payload.to_vec()),
-            IFLA_PHYS_SWITCH_ID => PhysSwitchId(payload.to_vec()),
-            IFLA_WIRELESS => Wireless(payload.to_vec()),
-            IFLA_PROTINFO => ProtoInfo(payload.to_vec()),
-            IFLA_PAD => Pad(payload.to_vec()),
-            IFLA_XDP => Xdp(payload.to_vec()),
-            IFLA_EVENT => Event(payload.to_vec()),
-            IFLA_NEW_NETNSID => NewNetnsId(payload.to_vec()),
-            IFLA_IF_NETNSID => IfNetnsId(payload.to_vec()),
-            IFLA_CARRIER_UP_COUNT => CarrierUpCount(payload.to_vec()),
-            IFLA_CARRIER_DOWN_COUNT => CarrierDownCount(payload.to_vec()),
-            IFLA_NEW_IFINDEX => NewIfIndex(payload.to_vec()),
-            IFLA_PROP_LIST => PropList(payload.to_vec()),
-            IFLA_PROTO_DOWN_REASON => ProtoDownReason(payload.to_vec()),
+            IFLA_UNSPEC => Unspec(ByteVec::from(payload)),
+            IFLA_COST => Cost(ByteVec::from(payload)),
+            IFLA_PRIORITY => Priority(ByteVec::from(payload)),
+            IFLA_WEIGHT => Weight(ByteVec::from(payload)),
+            IFLA_VFINFO_LIST => VfInfoList(ByteVec::from(payload)),
+            IFLA_VF_PORTS => VfPorts(ByteVec::from(payload)),
+            IFLA_PORT_SELF => PortSelf(ByteVec::from(payload)),
+            IFLA_PHYS_PORT_ID => PhysPortId(ByteVec::from(payload)),
+            IFLA_PHYS_SWITCH_ID => PhysSwitchId(ByteVec::from(payload)),
+            IFLA_WIRELESS => Wireless(ByteVec::from(payload)),
+            IFLA_PROTINFO => ProtoInfo(ByteVec::from(payload)),
+            IFLA_PAD => Pad(ByteVec::from(payload)),
+            IFLA_XDP => Xdp(ByteVec::from(payload)),
+            IFLA_EVENT => Event(ByteVec::from(payload)),
+            IFLA_NEW_NETNSID => NewNetnsId(ByteVec::from(payload)),
+            IFLA_IF_NETNSID => IfNetnsId(ByteVec::from(payload)),
+            IFLA_CARRIER_UP_COUNT => CarrierUpCount(ByteVec::from(payload)),
+            IFLA_CARRIER_DOWN_COUNT => CarrierDownCount(ByteVec::from(payload)),
+            IFLA_NEW_IFINDEX => NewIfIndex(ByteVec::from(payload)),
+            IFLA_PROP_LIST => PropList(ByteVec::from(payload)),
+            IFLA_PROTO_DOWN_REASON => ProtoDownReason(ByteVec::from(payload)),
             // HW address (we parse them as Vec for now, because for IP over GRE, the HW address is
             // an IP instead of a MAC for example
-            IFLA_ADDRESS => Address(payload.to_vec()),
-            IFLA_BROADCAST => Broadcast(payload.to_vec()),
-            IFLA_PERM_ADDRESS => PermAddress(payload.to_vec()),
+            IFLA_ADDRESS => Address(ByteVec::from(payload)),
+            IFLA_BROADCAST => Broadcast(ByteVec::from(payload)),
+            IFLA_PERM_ADDRESS => PermAddress(ByteVec::from(payload)),
             // String
             IFLA_IFNAME => IfName(parse_string(payload).context("invalid IFLA_IFNAME value")?),
             IFLA_QDISC => Qdisc(parse_string(payload).context("invalid IFLA_QDISC value")?),
@@ -473,9 +474,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
                     .context("invalid IFLA_OPERSTATE value")?
                     .into(),
             ),
-            IFLA_MAP => Map(payload.to_vec()),
-            IFLA_STATS => Stats(payload.to_vec()),
-            IFLA_STATS64 => Stats64(payload.to_vec()),
+            IFLA_MAP => Map(ByteVec::from(payload)),
+            IFLA_STATS => Stats(ByteVec::from(payload)),
+            IFLA_STATS64 => Stats64(ByteVec::from(payload)),
             IFLA_AF_SPEC => match interface_family as u16 {
                 AF_INET | AF_INET6 | AF_UNSPEC => {
                     let mut nlas = vec![];
@@ -486,8 +487,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
                     }
                     AfSpecInet(nlas)
                 }
-                AF_BRIDGE => AfSpecBridge(payload.to_vec()),
-                _ => AfSpecUnknown(payload.to_vec()),
+                AF_BRIDGE => AfSpecBridge(ByteVec::from(payload)),
+                _ => AfSpecUnknown(ByteVec::from(payload)),
             },
             IFLA_LINKINFO => {
                 let err = "invalid IFLA_LINKINFO value";
