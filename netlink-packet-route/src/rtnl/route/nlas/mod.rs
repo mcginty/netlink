@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 mod cache_info;
 pub use self::cache_info::*;
 
@@ -15,8 +17,10 @@ use byteorder::{ByteOrder, NativeEndian};
 
 use crate::{
     constants::*,
+    emit_ip,
+    ip_len,
     nlas::{self, DefaultNla, NlaBuffer},
-    parsers::{parse_u16, parse_u32},
+    parsers::{parse_ip, parse_u16, parse_u32},
     traits::Parseable,
     DecodeError,
 };
@@ -45,13 +49,13 @@ pub enum Nla {
     #[cfg(feature = "rich_nlas")]
     CacheInfo(CacheInfo),
     Unspec(Vec<u8>),
-    Destination(Vec<u8>),
-    Source(Vec<u8>),
-    Gateway(Vec<u8>),
+    Destination(IpAddr),
+    Gateway(IpAddr),
+    Source(IpAddr),
+    Via(IpAddr),
     PrefSource(Vec<u8>),
     Session(Vec<u8>),
     MpAlgo(Vec<u8>),
-    Via(Vec<u8>),
     NewDestination(Vec<u8>),
     Pref(Vec<u8>),
     Encap(Vec<u8>),
@@ -76,13 +80,9 @@ impl nlas::Nla for Nla {
         use self::Nla::*;
         match *self {
             Unspec(ref bytes)
-                | Destination(ref bytes)
-                | Source(ref bytes)
-                | Gateway(ref bytes)
                 | PrefSource(ref bytes)
                 | Session(ref bytes)
                 | MpAlgo(ref bytes)
-                | Via(ref bytes)
                 | NewDestination(ref bytes)
                 | Pref(ref bytes)
                 | Encap(ref bytes)
@@ -91,6 +91,12 @@ impl nlas::Nla for Nla {
                 | Uid(ref bytes)
                 | TtlPropagate(ref bytes)
                 => bytes.len(),
+
+                | Destination(ref addr)
+                | Gateway(ref addr)
+                | Source(ref addr)
+                | Via(ref addr)
+                => ip_len(addr),
 
             #[cfg(not(feature = "rich_nlas"))]
             CacheInfo(ref bytes)
@@ -127,13 +133,9 @@ impl nlas::Nla for Nla {
         use self::Nla::*;
         match *self {
             Unspec(ref bytes)
-                | Destination(ref bytes)
-                | Source(ref bytes)
-                | Gateway(ref bytes)
                 | PrefSource(ref bytes)
                 | Session(ref bytes)
                 | MpAlgo(ref bytes)
-                | Via(ref bytes)
                 | NewDestination(ref bytes)
                 | Pref(ref bytes)
                 | Encap(ref bytes)
@@ -142,6 +144,12 @@ impl nlas::Nla for Nla {
                 | Uid(ref bytes)
                 | TtlPropagate(ref bytes)
                 => buffer.copy_from_slice(bytes.as_slice()),
+
+            Destination(ref addr)
+                | Source(ref addr)
+                | Gateway(ref addr)
+                | Via(ref addr) =>
+                emit_ip(buffer, addr),
 
             #[cfg(not(feature = "rich_nlas"))]
                 MultiPath(ref bytes)
@@ -178,9 +186,10 @@ impl nlas::Nla for Nla {
             Unspec(_) => RTA_UNSPEC,
             Destination(_) => RTA_DST,
             Source(_) => RTA_SRC,
+            Gateway(_) => RTA_GATEWAY,
+            Via(_) => RTA_VIA,
             Iif(_) => RTA_IIF,
             Oif(_) => RTA_OIF,
-            Gateway(_) => RTA_GATEWAY,
             Priority(_) => RTA_PRIORITY,
             PrefSource(_) => RTA_PREFSRC,
             Metrics(_) => RTA_METRICS,
@@ -193,7 +202,6 @@ impl nlas::Nla for Nla {
             Table(_) => RTA_TABLE,
             Mark(_) => RTA_MARK,
             MfcStats(_) => RTA_MFC_STATS,
-            Via(_) => RTA_VIA,
             NewDestination(_) => RTA_NEWDST,
             Pref(_) => RTA_PREF,
             EncapType(_) => RTA_ENCAP_TYPE,
@@ -213,14 +221,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 
         let payload = buf.value();
         Ok(match buf.kind() {
+            RTA_DST => Destination(parse_ip(payload).context("invalid RTA_DST value")?),
+            RTA_SRC => Source(parse_ip(payload).context("invalid RTA_DST value")?),
+            RTA_GATEWAY => Gateway(parse_ip(payload).context("invalid RTA_DST value")?),
+            RTA_VIA => Via(parse_ip(payload).context("invalid RTA_DST value")?),
             RTA_UNSPEC => Unspec(payload.to_vec()),
-            RTA_DST => Destination(payload.to_vec()),
-            RTA_SRC => Source(payload.to_vec()),
-            RTA_GATEWAY => Gateway(payload.to_vec()),
             RTA_PREFSRC => PrefSource(payload.to_vec()),
             RTA_SESSION => Session(payload.to_vec()),
             RTA_MP_ALGO => MpAlgo(payload.to_vec()),
-            RTA_VIA => Via(payload.to_vec()),
             RTA_NEWDST => NewDestination(payload.to_vec()),
             RTA_PREF => Pref(payload.to_vec()),
             RTA_ENCAP => Encap(payload.to_vec()),
