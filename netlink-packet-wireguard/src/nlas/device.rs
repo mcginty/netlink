@@ -8,27 +8,7 @@ use netlink_packet_utils::{
     traits::*,
     DecodeError,
 };
-use std::{convert::TryInto, mem::size_of_val, ops::Deref};
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct PeerEntry<'a>(&'a Vec<WgPeerAttrs>);
-impl<'a> Nla for PeerEntry<'a> {
-    fn value_len(&self) -> usize {
-        self.0.as_slice().buffer_len()
-    }
-
-    fn kind(&self) -> u16 {
-        0
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        self.0.as_slice().emit(buffer);
-    }
-
-    fn is_nested(&self) -> bool {
-        true
-    }
-}
+use std::{convert::TryInto, mem::size_of_val};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct PeerEntry<'a>(&'a Vec<WgPeerAttrs>);
