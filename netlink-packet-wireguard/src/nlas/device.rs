@@ -31,6 +31,26 @@ impl<'a> Nla for PeerEntry<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+struct PeerEntry<'a>(&'a Vec<WgPeerAttrs>);
+impl<'a> Nla for PeerEntry<'a> {
+    fn value_len(&self) -> usize {
+        self.0.as_slice().buffer_len()
+    }
+
+    fn kind(&self) -> u16 {
+        0
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        self.0.as_slice().emit(buffer);
+    }
+
+    fn is_nested(&self) -> bool {
+        true
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WgDeviceAttrs {
     Unspec(Vec<u8>),
     IfIndex(u32),
